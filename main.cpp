@@ -1,4 +1,3 @@
-
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
 #include <SFML/System.hpp>
@@ -7,9 +6,13 @@
 #include <fstream>
 #include <iostream>
 #include <ctime>
-const std::string FONT_PATH = "C:/Users/adamk/OneDrive/Pulpit/Projekt Informatyka/arkanoid/x64/Debug/arial.ttf";
 
 using namespace std;
+
+//Œcie¿ki do plików
+const string FONT_PATH = "C:/Users/adamk/OneDrive/Pulpit/Projekt Informatyka/arkanoid/x64/Debug/arial.ttf";
+const string BACKGROUND_PATH = "C:/Users/adamk/OneDrive/Pulpit/Projekt Informatyka/arkanoid/arkanoid/space.png";
+const string IRREGULAR_PATH = "C:/Users/adamk/OneDrive/Pulpit/Projekt Informatyka/arkanoid/arkanoid/ufo.png";
 
 // Sta³e definiuj¹ce wymiary i parametry gry
 const int WINDOW_WIDTH = 800;
@@ -20,9 +23,11 @@ const float BLOCK_WIDTH = 60.0f;
 const float BLOCK_HEIGHT = 20.0f;
 const int MAX_NUMBER_OF_ITEMS = 5;
 const int NUMBER_OF_LEVELS = 3;
+const int WALL_HEIGHT = 20.0f;
+const int WALL_WIDTH = 100.0f;
 
 float PADDLE_WIDTH = 100.0f;
-float ball_speed = -1.5f;
+float ball_speed = -2.0f;
 
 //---------------------------Struktury---------------------------------------
 // Struktura przechowuj¹ca dane gracza
@@ -41,8 +46,6 @@ struct GameState {
 //---------------------------------------------------------------------------
 
 //----------------------------------MENU-------------------------------------
-//->->->->->->->->->
-
 // Klasa reprezentuj¹ca menu
 class Menu {
 public:
@@ -137,7 +140,7 @@ void Menu::MoveDown() {
 class Paddle {
 public:
     sf::RectangleShape shape; // Graficzny kszta³t paletki
-    float paddle_speed = 4.0f;       // Prêdkoœæ poruszania siê paletki (float na koñcu)
+    float paddle_speed = 5.0f;       // Prêdkoœæ poruszania siê paletki (float na koñcu)
 
     // Konstruktor inicjalizuj¹cy pozycjê i wygl¹d paletki
     Paddle(float x, float y) {
@@ -200,6 +203,66 @@ public:
     }
 };
 
+//Przeszkoda- ró¿ne scenerie
+class Obstacle {
+public:
+    sf::RectangleShape shape;
+
+    Obstacle(float x, float y) {
+        shape.setSize({ WALL_WIDTH, WALL_HEIGHT });
+        shape.setPosition(x, y);
+        shape.setFillColor(sf::Color::Magenta);
+    }
+
+    void draw(sf::RenderWindow& window) const { //dlaczego dodano const???
+        window.draw(shape);
+    }
+};
+
+std::vector<Obstacle> obstacles; // Globalna lista przeszkód
+
+//Nieregularny kszta³t
+class Irregular {
+private:
+    sf::Sprite sprite;       // Sprite reprezentuj¹cy UFO
+    sf::Texture texture;     // Tekstura dla sprajta
+    sf::Vector2f velocity;   // Prêdkoœæ poruszania siê
+
+public:
+    // Konstruktor
+    Irregular(const std::string& texturePath, sf::Vector2f initialPosition, sf::Vector2f initialVelocity)
+        : velocity(initialVelocity) {
+        if (!texture.loadFromFile(texturePath)) {
+            throw std::runtime_error("Error loading texture");
+        }
+        sprite.setTexture(texture);
+        sprite.setTextureRect(sf::IntRect(0, 0, 144, 94)); // Przyciêcie tekstury
+        sprite.setPosition(initialPosition);               // Pocz¹tkowa pozycja
+    }
+
+    // Aktualizacja pozycji sprajta
+    void update(const sf::RenderWindow& window) {
+        sprite.move(velocity);
+
+        // Pobranie pozycji i rozmiaru sprajta
+        sf::FloatRect bounds = sprite.getGlobalBounds();
+
+        // Wykrywanie kolizji z granicami okna i odbicie
+        if (bounds.left <= 0 || bounds.left + bounds.width >= window.getSize().x) {
+            velocity.x = -velocity.x; // Odbicie w osi X
+        }
+        if (bounds.top <= 0 || bounds.top + bounds.height >= window.getSize().y) {
+            velocity.y = -velocity.y; // Odbicie w osi Y
+        }
+    }
+
+    // Rysowanie sprajta
+    void draw(sf::RenderWindow& window) {
+        window.draw(sprite);
+    }
+};
+
+//Okno wyboru opcji
 class GameDialog {
 protected:
     sf::Font font;
@@ -268,9 +331,8 @@ public:
 
 
 //---------------------------FUNKCJE-----------------------------------------
-// ----------------------------------
+
 // Funkcja checkCollision - Kolizje
-// ----------------------------------
 // Sprawdza, czy pi³ka koliduje z prostok¹tnymi obiektami (paletk¹, bloczkami).
 // Oblicza kierunek i g³êbokoœæ kolizji, aby odpowiednio zmieniæ kierunek ruchu pi³ki.
 bool checkCollision(const sf::RectangleShape& rect, sf::CircleShape& ball, sf::Vector2f& ballVelocity) {
@@ -338,12 +400,15 @@ void handleCollisions(Ball& ball, Paddle& paddle, std::vector<Block>& blocks, in
             score++; // Dodaj punkt
         }
     }
+
+    // Kolizja z przeszkodami
+    for (auto& obstacle : obstacles) {
+        checkCollision(obstacle.shape, ball.shape, ball.velocity);
+    }
+
 }
 
-
-// ----------------------------------
 // Funkcja renderEndScreen - Ekran koñca gry
-// ----------------------------------
 // Wyœwietla ekran z komunikatem koñcowym ("GAME OVER" lub "WIN")
 // oraz mechanizm wyboru TAK/NIE za pomoc¹ klasy GameDialog.
 void renderEndScreen(sf::RenderWindow& window, const std::string& message, const std::string& timeMessage) {
@@ -392,6 +457,17 @@ void renderEndScreen(sf::RenderWindow& window, const std::string& message, const
     }
 }
 
+//T³o
+void background(sf::RenderWindow& window) {
+    sf::Texture back;
+    if (!back.loadFromFile(BACKGROUND_PATH)) {
+        std::cerr << "Error loading background texture" << std::endl;
+        return;
+    }
+    sf::Sprite s(back);
+    window.draw(s);
+}
+
 // Funkcja wyœwietlaj¹ca ekran pomocy
 void showHelpScreen(sf::RenderWindow& window) {
     sf::Font font;
@@ -415,10 +491,7 @@ void showHelpScreen(sf::RenderWindow& window) {
     }
 }
 
-
-//---------------------------------------------------------------------------
 //-------------------Zapis i odczyt gry--------------------------------------
-
 // Save game state to file
 void saveGameState(const Paddle& paddle, const Ball& ball, const std::vector<Block>& blocks) {
     ofstream file("gamestate.txt", ios::out); //Tworzy obiekt pliku do zapisu. Otwiera (lub tworzy) plik gamestate.txt w trybie zapisu. Jeœli plik istnieje, zostanie nadpisany.
@@ -569,8 +642,21 @@ void showStatsScreen(sf::RenderWindow& window) {
     }
 }
 
-//---------------------------------------------------------------------------
+//t³o
+void renderBackground(sf::RenderWindow& window) {
+    static sf::Texture texture; // Statyczna tekstura, ³adowana tylko raz
+    static sf::Sprite background;
 
+    if (!texture.getSize().x) { // £aduj teksturê tylko raz
+        if (!texture.loadFromFile(BACKGROUND_PATH)) {
+            std::cerr << "Error loading background texture" << std::endl;
+            return;
+        }
+        background.setTexture(texture);
+    }
+
+    window.draw(background);
+}
 
 // ----------------------------------
 // Funkcja runGame - G³ówna pêtla gry
@@ -579,6 +665,8 @@ void showStatsScreen(sf::RenderWindow& window) {
 void runGame(sf::RenderWindow& window) {
     Paddle paddle(WINDOW_WIDTH / 2 - PADDLE_WIDTH / 2, WINDOW_HEIGHT - 50);
     Ball ball(WINDOW_WIDTH / 2, WINDOW_HEIGHT - 100);
+
+    Irregular irregular(IRREGULAR_PATH, { 100, 100 }, { 1.0f, 1.5f });
 
     time_t pauseStartTime = 0; // Czas rozpoczêcia pauzy (do obliczeñ ca³kowitego czasu gry)
     double totalPauseTime = 0; // £¹czny czas spêdzony na pauzach
@@ -673,6 +761,7 @@ void runGame(sf::RenderWindow& window) {
 
             // Aktualizacja pozycji pi³ki
             ball.update();
+            irregular.update(window);
         }
 
         // Obs³uga kolizji i aktualizacja wyniku
@@ -710,13 +799,28 @@ void runGame(sf::RenderWindow& window) {
             break;
         }
 
+        
+
+
         // Renderowanie obiektów gry
         window.clear();
+
+        //t³o
+        renderBackground(window);
+
+        irregular.draw(window);
+
         window.draw(paddle.shape);
         window.draw(ball.shape);
+
         for (const auto& block : blocks) {
             if (!block.destroyed)
                 window.draw(block.shape);
+        }
+
+        //renderowanie przeszkód
+        for (const auto& obstacle : obstacles) {
+            obstacle.draw(window);
         }
 
         // Wyœwietlanie wyniku i czasu na ekranie
@@ -738,11 +842,7 @@ void runGame(sf::RenderWindow& window) {
     }
 }
 
-//---------------------------------------------------------------------------
-
-// ----------------------------------
 // Funkcja chooseLevel - Wybór poziomu trudnoœci
-// ----------------------------------
 // Pozwala graczowi wybraæ poziom trudnoœci (EASY, MEDIUM, HARD)
 // i ustawia odpowiedni¹ prêdkoœæ pi³ki.
 void chooseLevel(sf::RenderWindow& window) {
@@ -758,23 +858,16 @@ void chooseLevel(sf::RenderWindow& window) {
 
     const std::vector<std::string> items = { "EASY", "MEDIUM", "HARD" };
     const std::vector<float> speeds = { -2.0f, -3.0f, -4.0f };
-    const std::vector<float> paddlewidth = { 100.0f, 80.0f, 60.0f };
+    const std::vector<float> paddlewidth = { 100.0f, 85.0f, 70.0f };
     std::vector<sf::Text> levels(items.size());
     int selectedLevel = 0;
 
     for (size_t i = 0; i < items.size(); i++) {
-        if (i == selectedLevel) {
-            levels[i].setFillColor(sf::Color::Red);
-        }
-        else {
-            levels[i].setFillColor(sf::Color::White);
-        }
         levels[i].setFont(font);
         levels[i].setString(items[i]);
-        //levels[i].setFillColor(i == selectedLevel ? sf::Color::Red : sf::Color::White);
+        levels[i].setFillColor(i == selectedLevel ? sf::Color::Red : sf::Color::White);
         levels[i].setPosition(WINDOW_WIDTH / 2 - 100, 150 + i * 50);
     }
-
 
     while (window.isOpen()) {
         sf::Event event;
@@ -783,27 +876,33 @@ void chooseLevel(sf::RenderWindow& window) {
                 window.close();
 
             if (event.type == sf::Event::KeyPressed) {
-                if (event.key.code == sf::Keyboard::Up)
-                    selectedLevel = (selectedLevel - 1 + items.size()) % items.size(); //przesuwa wybór poziomu w menu w górê, z uwzglêdnieniem cyklicznoœci.
-                    //Wyjaœnienie-> (selectedLevel - 1) przesuwa wybór o jeden w górê. Dodanie items.size() i u¿ycie % zapobiega przekroczeniu indeksów (cyklicznoœæ).
-                else if (event.key.code == sf::Keyboard::Down)
+                if (event.key.code == sf::Keyboard::Up) {
+                    selectedLevel = (selectedLevel - 1 + items.size()) % items.size();
+                }
+                else if (event.key.code == sf::Keyboard::Down) {
                     selectedLevel = (selectedLevel + 1) % items.size();
+                }
                 else if (event.key.code == sf::Keyboard::Enter) {
+                    // Ustawienia prêdkoœci pi³ki i szerokoœci paletki
                     ball_speed = speeds[selectedLevel];
                     PADDLE_WIDTH = paddlewidth[selectedLevel];
-                    return;
+
+                    obstacles.clear(); // Usuniêcie istniej¹cych przeszkód, jeœli s¹
+                    if (items[selectedLevel] == "MEDIUM") {
+                        obstacles.emplace_back(WINDOW_WIDTH / 2 - WALL_WIDTH / 2, WINDOW_HEIGHT / 2 - WALL_HEIGHT / 2);
+                    }
+                    else if (items[selectedLevel] == "HARD") {
+                        obstacles.emplace_back(WINDOW_WIDTH / 3 - WALL_WIDTH / 2, WINDOW_HEIGHT / 2 - WALL_HEIGHT / 2);
+                        obstacles.emplace_back(2 * WINDOW_WIDTH / 3 - WALL_WIDTH / 2, WINDOW_HEIGHT / 2 - WALL_HEIGHT / 2);
+                    }
+
+                    return; // Wyjœcie z funkcji po wybraniu poziomu
                 }
             }
         }
 
         for (size_t i = 0; i < items.size(); i++) {
-            if (i == selectedLevel) {
-                levels[i].setFillColor(sf::Color::Red);
-            }
-            else {
-                levels[i].setFillColor(sf::Color::White);
-            }
-            //levels[i].setFillColor(i == selectedLevel ? sf::Color::Red : sf::Color::White);
+            levels[i].setFillColor(i == selectedLevel ? sf::Color::Red : sf::Color::White);
         }
 
         window.clear(sf::Color::Black);
@@ -818,7 +917,6 @@ void chooseLevel(sf::RenderWindow& window) {
 
 
 //---------------------------------G£ÓWNA PÊTLA-----------------------------
-//->->->->->->->->->
 int main() {
     sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Arkanoid");
 
