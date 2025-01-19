@@ -14,39 +14,39 @@ const string FONT_PATH = "C:/Users/adamk/OneDrive/Pulpit/Projekt Informatyka/ark
 const string BACKGROUND_PATH = "C:/Users/adamk/OneDrive/Pulpit/Projekt Informatyka/arkanoid/arkanoid/space.png";
 const string IRREGULAR_PATH = "C:/Users/adamk/OneDrive/Pulpit/Projekt Informatyka/arkanoid/arkanoid/ufo.png";
 
-// Sta³e definiuj¹ce wymiary i parametry gry
+// Wymiary i parametry gry
 const int WINDOW_WIDTH = 800;
 const int WINDOW_HEIGHT = 600;
-const float PADDLE_HEIGHT = 20.0f;
-const float BALL_RADIUS = 10.0f;
-const float BLOCK_WIDTH = 60.0f;
-const float BLOCK_HEIGHT = 20.0f;
-const int MAX_NUMBER_OF_ITEMS = 5;
+const float PADDLE_HEIGHT = 20.0;
+const float BALL_RADIUS = 10.0;
+const float BLOCK_WIDTH = 60.0;
+const float BLOCK_HEIGHT = 20.0;
+const int MENU_NUMBER = 5;
 const int NUMBER_OF_LEVELS = 3;
-const int WALL_HEIGHT = 20.0f;
-const int WALL_WIDTH = 100.0f;
+const int WALL_HEIGHT = 20;
+const int WALL_WIDTH = 100;
 
-float PADDLE_WIDTH = 100.0f;
-float ball_speed = -2.0f;
+float PADDLE_WIDTH = 100.0;
+float ball_speed = -2.0;
+float ufo_speed = 1.0;
 
 //---------------------------Struktury---------------------------------------
-// Struktura przechowuj¹ca dane gracza
+// Struktura dane gracza
 struct Player {
     string name;
     int score;
 };
 
-//Struktura przechowuj¹ca stan gry 
+//Struktura stanu gry 
 struct GameState {
     sf::Vector2f paddlePosition;
     sf::Vector2f ballPosition;
-    sf::Vector2f ballVelocity;
-    std::vector<bool> blocksDestroyed;
+    vector<bool> blocksDestroyed;
 };
 //---------------------------------------------------------------------------
 
 //----------------------------------MENU-------------------------------------
-// Klasa reprezentuj¹ca menu
+// Klasa menu
 class Menu {
 public:
     Menu(float width, float height);
@@ -59,33 +59,34 @@ public:
 private:
     int selectedItemIndex;
     sf::Font font;
-    sf::Text text[MAX_NUMBER_OF_ITEMS];
+    sf::Text text[MENU_NUMBER];
     sf::Text arkanoid;
     sf::Text help;
     sf::Text ESC;
 };
 
-Menu::Menu(float width, float height) : selectedItemIndex(0) {
+Menu::Menu(float width, float height) {
+    selectedItemIndex = 0;
     if (!font.loadFromFile(FONT_PATH)) {
         cerr << "Error loading font" << endl;
         exit(EXIT_FAILURE);
     }
 
-    // Inicjalizacja pozycji i treœci elementów menu
-    string items[MAX_NUMBER_OF_ITEMS] = { "Play", "Help", "Options", "Stats", "Exit" };
-    for (int i = 0; i < MAX_NUMBER_OF_ITEMS; i++) {
+    // Pozycje i treœci menu
+    string items[MENU_NUMBER] = { "Graj", "Pomoc", "Opcje", "Statystyki", "Wyjscie" };
+    for (int i = 0; i < MENU_NUMBER; i++) {
         sf::Color color;
         if (i == selectedItemIndex) {
-            color = sf::Color::Red; // Wybrany element menu na czerwono
+            color = sf::Color::Red;
         }
         else {
-            color = sf::Color::White; // Pozosta³e elementy na bia³o
+            color = sf::Color::White; 
         }
 
         text[i].setFont(font);
         text[i].setString(items[i]);
-        text[i].setFillColor(color); // Ustawienie koloru tekstu
-        text[i].setPosition(sf::Vector2f(width / 2 - 50, height / (MAX_NUMBER_OF_ITEMS + 1) * (i + 1)));
+        text[i].setFillColor(color);
+        text[i].setPosition(sf::Vector2f(width / 2 - 50, height / (MENU_NUMBER + 1) * (i + 1)));
     }
 
     arkanoid.setString("Arkanoid");
@@ -112,21 +113,21 @@ void Menu::draw(sf::RenderWindow& window) {
     window.draw(arkanoid);
     window.draw(help);
     window.draw(ESC);
-    for (int i = 0; i < MAX_NUMBER_OF_ITEMS; i++) {
+    for (int i = 0; i < MENU_NUMBER; i++) {
         window.draw(text[i]);
     }
 }
 
 void Menu::MoveUp() {
-    if (selectedItemIndex - 1 >= 0) {
+    if (selectedItemIndex - 1 >= 0) { 
         text[selectedItemIndex].setFillColor(sf::Color::White);
-        selectedItemIndex--;
+        selectedItemIndex--; 
         text[selectedItemIndex].setFillColor(sf::Color::Red);
     }
 }
 
 void Menu::MoveDown() {
-    if (selectedItemIndex + 1 < MAX_NUMBER_OF_ITEMS) {
+    if (selectedItemIndex + 1 < MENU_NUMBER) {
         text[selectedItemIndex].setFillColor(sf::Color::White);
         selectedItemIndex++;
         text[selectedItemIndex].setFillColor(sf::Color::Red);
@@ -139,19 +140,18 @@ void Menu::MoveDown() {
 // Klasa reprezentuj¹ca paletkê
 class Paddle {
 public:
-    sf::RectangleShape shape; // Graficzny kszta³t paletki
-    float paddle_speed = 5.0f;       // Prêdkoœæ poruszania siê paletki (float na koñcu)
+    sf::RectangleShape shape; 
+    float paddle_speed = 5.0;
 
-    // Konstruktor inicjalizuj¹cy pozycjê i wygl¹d paletki
     Paddle(float x, float y) {
-        shape.setSize({ PADDLE_WIDTH, PADDLE_HEIGHT }); //nadanie wymiarów z const
+        shape.setSize({ PADDLE_WIDTH, PADDLE_HEIGHT });
         shape.setPosition(x, y);
         shape.setFillColor(sf::Color::Blue);
     }
 
     // Ruch w lewo
     void moveLeft() {
-        if (shape.getPosition().x > 0) // wymiary okna zaczynaj sie od lewej strony //.getPosition- Pobiera aktualn¹ pozycjê obiektu graficznego w oknie gry
+        if (shape.getPosition().x > 0) 
             shape.move(-paddle_speed, 0); 
     }
 
@@ -162,22 +162,21 @@ public:
     }
 };
 
-// Klasa reprezentuj¹ca pi³kê
+// Klasa pi³ki
 class Ball {
 public:
-    sf::CircleShape shape;       // Graficzny kszta³t pi³ki
-    sf::Vector2f velocity{ ball_speed, ball_speed }; // Prêdkoœæ pi³ki
+    sf::CircleShape shape;
+    sf::Vector2f velocity{ ball_speed, ball_speed };
 
-    // Konstruktor inicjalizuj¹cy pozycjê i wygl¹d pi³ki
     Ball(float x, float y) {
         shape.setRadius(BALL_RADIUS);
         shape.setPosition(x, y);
         shape.setFillColor(sf::Color::Red);
     }
 
-    // Aktualizacja pozycji pi³ki i obs³uga kolizji ze œcianami
+    // Aktualizacja pozycji i kolizja
     void update() {
-        shape.move(velocity); //Przesuwa obiekt graficzny o wektor velocity
+        shape.move(velocity); 
 
         // Odbicie od œcian bocznych
         if (shape.getPosition().x <= 0 || shape.getPosition().x + BALL_RADIUS * 2 >= WINDOW_WIDTH)
@@ -189,13 +188,12 @@ public:
     }
 };
 
-// Klasa reprezentuj¹ca bloczek
+// Klasa bloczka
 class Block {
 public:
-    sf::RectangleShape shape; // Graficzny kszta³t bloczka
-    bool destroyed = false;   // Czy bloczek zosta³ zniszczony?
+    sf::RectangleShape shape; 
+    bool destroyed = false;
 
-    // Konstruktor inicjalizuj¹cy pozycjê i wygl¹d bloczka
     Block(float x, float y) {
         shape.setSize({ BLOCK_WIDTH, BLOCK_HEIGHT });
         shape.setPosition(x, y);
@@ -203,7 +201,7 @@ public:
     }
 };
 
-//Przeszkoda- ró¿ne scenerie
+// Klasa przeszkody (rózne scenerie gry)
 class Obstacle {
 public:
     sf::RectangleShape shape;
@@ -214,55 +212,51 @@ public:
         shape.setFillColor(sf::Color::Magenta);
     }
 
-    void draw(sf::RenderWindow& window) const { //dlaczego dodano const???
+    void draw(sf::RenderWindow& window) const { //const w metodzie draw oznacza, ¿e ta metoda nie zmienia stanu obiektu klasy Obstacle
         window.draw(shape);
     }
 };
 
-std::vector<Obstacle> obstacles; // Globalna lista przeszkód
+vector<Obstacle> obstacles; // Globalna lista przeszkód
+//pomaga w funkcja .clear .pushback itd
 
-//Nieregularny kszta³t
+// Klasa nieregularnego kszta³tu
 class Irregular {
 private:
-    sf::Sprite sprite;       // Sprite reprezentuj¹cy UFO
-    sf::Texture texture;     // Tekstura dla sprajta
-    sf::Vector2f velocity;   // Prêdkoœæ poruszania siê
+    sf::Sprite sprite;       
+    sf::Texture texture;     
+    sf::Vector2f velocity{ufo_speed, ufo_speed};
 
 public:
-    // Konstruktor
-    Irregular(const std::string& texturePath, sf::Vector2f initialPosition, sf::Vector2f initialVelocity)
-        : velocity(initialVelocity) {
-        if (!texture.loadFromFile(texturePath)) {
-            throw std::runtime_error("Error loading texture");
+    Irregular(float x, float y) {
+        if (!texture.loadFromFile(IRREGULAR_PATH)) {
+            cerr << "Error loading texture from " << IRREGULAR_PATH << endl;
+            return;
         }
         sprite.setTexture(texture);
-        sprite.setTextureRect(sf::IntRect(0, 0, 144, 94)); // Przyciêcie tekstury
-        sprite.setPosition(initialPosition);               // Pocz¹tkowa pozycja
+        sprite.setTextureRect(sf::IntRect(0, 0, 144, 94));
+        sprite.setPosition(x,y);              
     }
 
-    // Aktualizacja pozycji sprajta
     void update(const sf::RenderWindow& window) {
         sprite.move(velocity);
 
-        // Pobranie pozycji i rozmiaru sprajta
         sf::FloatRect bounds = sprite.getGlobalBounds();
 
-        // Wykrywanie kolizji z granicami okna i odbicie
         if (bounds.left <= 0 || bounds.left + bounds.width >= window.getSize().x) {
-            velocity.x = -velocity.x; // Odbicie w osi X
+            velocity.x = -velocity.x;
         }
         if (bounds.top <= 0 || bounds.top + bounds.height >= window.getSize().y) {
-            velocity.y = -velocity.y; // Odbicie w osi Y
+            velocity.y = -velocity.y; 
         }
     }
 
-    // Rysowanie sprajta
     void draw(sf::RenderWindow& window) {
         window.draw(sprite);
     }
 };
 
-//Okno wyboru opcji
+//Klasa wyboru opcji Tak/Nie
 class GameDialog {
 protected:
     sf::Font font;
@@ -272,8 +266,12 @@ protected:
     bool isYesSelected = true;
 
 public:
-    GameDialog(const std::string& dialogTitle, const sf::Vector2f& titlePos, const sf::Vector2f& yesPos, const sf::Vector2f& noPos) {
+    GameDialog(const string& dialogTitle, const sf::Vector2f& titlePos, const sf::Vector2f& yesPos, const sf::Vector2f& noPos) {
         font.loadFromFile(FONT_PATH);
+        if (!font.loadFromFile(FONT_PATH)) {
+            cerr << "Error loading font" << endl;
+            exit(EXIT_FAILURE);
+        }
 
         title.setFont(font);
         title.setString(dialogTitle);
@@ -295,14 +293,15 @@ public:
     }
 
     void selection() {
-        isYesSelected = !isYesSelected;
         if (isYesSelected) {
-            optionYes.setFillColor(sf::Color::Red);
-            optionNo.setFillColor(sf::Color::White);
-        }
-        else {
+            isYesSelected = false; // Prze³¹cz na "NIE"
             optionYes.setFillColor(sf::Color::White);
             optionNo.setFillColor(sf::Color::Red);
+        }
+        else {
+            isYesSelected = true; // Prze³¹cz na "TAK"
+            optionYes.setFillColor(sf::Color::Red);
+            optionNo.setFillColor(sf::Color::White);
         }
     }
 
@@ -331,17 +330,12 @@ public:
 
 
 //---------------------------FUNKCJE-----------------------------------------
-
-// Funkcja checkCollision - Kolizje
-// Sprawdza, czy pi³ka koliduje z prostok¹tnymi obiektami (paletk¹, bloczkami).
-// Oblicza kierunek i g³êbokoœæ kolizji, aby odpowiednio zmieniæ kierunek ruchu pi³ki.
+//Kolizje
 bool checkCollision(const sf::RectangleShape& rect, sf::CircleShape& ball, sf::Vector2f& ballVelocity) {
-    sf::FloatRect ballBounds = ball.getGlobalBounds(); // Granice pi³ki
-    sf::FloatRect rectBounds = rect.getGlobalBounds(); // Granice prostok¹ta
+    sf::FloatRect ballBounds = ball.getGlobalBounds();
+    sf::FloatRect rectBounds = rect.getGlobalBounds();
 
-    //gdy pilka intersects(przetnie) pole prostokata
     if (ballBounds.intersects(rectBounds)) {
-        // Obliczenie œrodka pi³ki i prostok¹ta
         sf::Vector2f ballCenter(ballBounds.left + ballBounds.width / 2, ballBounds.top + ballBounds.height / 2);
         sf::Vector2f rectCenter(rectBounds.left + rectBounds.width / 2, rectBounds.top + rectBounds.height / 2);
 
@@ -353,8 +347,8 @@ bool checkCollision(const sf::RectangleShape& rect, sf::CircleShape& ball, sf::V
         //obliczenie glebokosci przeciecia
         //abs- wartosc bezwzgkedna
         //jest ró¿nic¹ miêdzy sum¹ po³ówek szerokoœci / wysokoœci obu obiektów a odleg³oœci¹ ich œrodków.U¿ywa siê tutaj wartoœci bezwzglêdnych(std::abs), poniewa¿ ró¿nica ta musi byæ dodatnia.
-        float intersectX = (rectBounds.width / 2 + ballBounds.width / 2) - std::abs(deltaX); //szerokosci pilki i bloczka od srodka - wart bezwgl roznicy srodkow mas w x
-        float intersectY = (rectBounds.height / 2 + ballBounds.height / 2) - std::abs(deltaY); //wyskosci pilki i bloczka od srodka - wart bezwgl roznicy srodkow mas w y
+        float intersectX = (rectBounds.width / 2 + ballBounds.width / 2) - abs(deltaX); //szerokosci pilki i bloczka od srodka - wart bezwgl roznicy srodkow mas w x
+        float intersectY = (rectBounds.height / 2 + ballBounds.height / 2) - abs(deltaY); //wyskosci pilki i bloczka od srodka - wart bezwgl roznicy srodkow mas w y
 
         // Odbicie pi³ki w zale¿noœci od kierunku kolizji
         //Okreœlenie kierunku kolizji i odbicie pi³ki
@@ -389,29 +383,28 @@ bool checkCollision(const sf::RectangleShape& rect, sf::CircleShape& ball, sf::V
     return false;
 }
 
-// Funkcja obs³uguj¹ca kolizje pi³ki z paletk¹ i bloczkami //Przekazywanie danych przez referencjê w funkcji handleCollisions
-void handleCollisions(Ball& ball, Paddle& paddle, std::vector<Block>& blocks, int& score) {
-    checkCollision(paddle.shape, ball.shape, ball.velocity); // Kolizja z paletk¹
+// Funkcja kolizji pi³ki z paletk¹ i bloczkami
+void handleCollisions(Ball& ball, Paddle& paddle, vector<Block>& blocks, int& score) {
+    checkCollision(paddle.shape, ball.shape, ball.velocity);
 
-    // Kolizja z blokami
-    for (auto& block : blocks) {
-        if (!block.destroyed && checkCollision(block.shape, ball.shape, ball.velocity)) {
-            block.destroyed = true; // Oznacz bloczek jako zniszczony
-            score++; // Dodaj punkt
+    //auto - automatyczne wywnioskowanie typu zmiennej na podstawie jej inicjalizacji
+    //mogl byc Block&
+
+    for (int i = 0; i < blocks.size(); ++i) {
+        if (!blocks[i].destroyed && checkCollision(blocks[i].shape, ball.shape, ball.velocity)) {
+            blocks[i].destroyed = true; 
+            score++; 
         }
     }
 
-    // Kolizja z przeszkodami
-    for (auto& obstacle : obstacles) {
-        checkCollision(obstacle.shape, ball.shape, ball.velocity);
+    for (int i = 0; i < obstacles.size(); ++i) {
+        checkCollision(obstacles[i].shape, ball.shape, ball.velocity);
     }
 
 }
 
-// Funkcja renderEndScreen - Ekran koñca gry
-// Wyœwietla ekran z komunikatem koñcowym ("GAME OVER" lub "WIN")
-// oraz mechanizm wyboru TAK/NIE za pomoc¹ klasy GameDialog.
-void renderEndScreen(sf::RenderWindow& window, const std::string& message, const std::string& timeMessage) {
+// Funkcja ekranu koñca gry
+void renderEndScreen(sf::RenderWindow& window, const string& message, const string& timeMessage) {
     sf::Font font;
     if (!font.loadFromFile(FONT_PATH)) {
         cerr << "Error loading font" << endl;
@@ -426,7 +419,7 @@ void renderEndScreen(sf::RenderWindow& window, const std::string& message, const
     timeText.setFillColor(sf::Color::White);
     timeText.setPosition(200, 250);
 
-    PlayAgain again; // Mechanizm wyboru TAK/NIE
+    PlayAgain again;
 
     while (window.isOpen()) {
         sf::Event event;
@@ -439,11 +432,11 @@ void renderEndScreen(sf::RenderWindow& window, const std::string& message, const
                 switch (event.key.code) {
                 case sf::Keyboard::Left:
                 case sf::Keyboard::Right:
-                    again.selection(); // Prze³¹czanie miêdzy TAK/NIE
+                    again.selection(); 
                     break;
                 case sf::Keyboard::Enter:
-                    if (again.getIsYesSelected()) return; // Powrót do menu g³ównego
-                    else window.close(); // Zamykanie gry
+                    if (again.getIsYesSelected()) return;
+                    else window.close(); 
                     break;
                 }
             }
@@ -457,18 +450,7 @@ void renderEndScreen(sf::RenderWindow& window, const std::string& message, const
     }
 }
 
-//T³o
-void background(sf::RenderWindow& window) {
-    sf::Texture back;
-    if (!back.loadFromFile(BACKGROUND_PATH)) {
-        std::cerr << "Error loading background texture" << std::endl;
-        return;
-    }
-    sf::Sprite s(back);
-    window.draw(s);
-}
-
-// Funkcja wyœwietlaj¹ca ekran pomocy
+// Funkcja ekranu pomocy
 void showHelpScreen(sf::RenderWindow& window) {
     sf::Font font;
     font.loadFromFile(FONT_PATH);
@@ -481,7 +463,6 @@ void showHelpScreen(sf::RenderWindow& window) {
     window.draw(helpText);
     window.display();
 
-    // Czekaj na ENTER
     while (true) {
         sf::Event event;
         while (window.pollEvent(event)) {
@@ -491,20 +472,18 @@ void showHelpScreen(sf::RenderWindow& window) {
     }
 }
 
-//-------------------Zapis i odczyt gry--------------------------------------
-// Save game state to file
-void saveGameState(const Paddle& paddle, const Ball& ball, const std::vector<Block>& blocks) {
-    ofstream file("gamestate.txt", ios::out); //Tworzy obiekt pliku do zapisu. Otwiera (lub tworzy) plik gamestate.txt w trybie zapisu. Jeœli plik istnieje, zostanie nadpisany.
-    if (!file) {
+// Funkcje zapisu i odczytu gry
+void saveGameState(const Paddle& paddle, const Ball& ball, const vector<Block>& blocks) {
+    ofstream file("gamestate.txt", ios::out);
+    if (!file) {  //ofstream- klasa zapisu danych do pliku  //ios::out jest flag¹ trybu pracy dla strumienia plikowego. Oznacza, ¿e plik zostanie otwarty w trybie zapisu.
         cerr << "Error: Could not open file for saving." << endl;
         return;
     }
     if (file.is_open()) {
-        file << paddle.shape.getPosition().x << " " << paddle.shape.getPosition().y << "\n"; //zapisuje pozycje paletki (x,y)
-        file << ball.shape.getPosition().x << " " << ball.shape.getPosition().y << "\n"; //zapisuje pozycje pilki (x,y)
-        file << ball.velocity.x << " " << ball.velocity.y << "\n"; //zapisuje predkosc pilki (x,y)
-        for (const auto& block : blocks) { //Iteruje po wektorze blocks i zapisuje do pliku wartoœæ zmiennej destroyed ka¿dego bloczka.
-            file << block.destroyed << " "; //zapisuje zniszczone bloczki (true 1-zniszczony, false 0-niezniszczony)
+        file << paddle.shape.getPosition().x << " " << paddle.shape.getPosition().y << "\n"; 
+        file << ball.shape.getPosition().x << " " << ball.shape.getPosition().y << "\n"; 
+        for (int i = 0; i < blocks.size(); ++i) { // U¿ywamy indeksu do iteracji
+            file << blocks[i].destroyed << " ";
         }
         file << "\n";
         file.close();
@@ -512,30 +491,26 @@ void saveGameState(const Paddle& paddle, const Ball& ball, const std::vector<Blo
     }
 }
 
-void loadGameState(Paddle& paddle, Ball& ball, std::vector<Block>& blocks) {
-    ifstream file("gamestate.txt", ios::in); //Tworzy obiekt pliku do odczytu. Otwiera plik gamestate.txt w trybie odczytu.
-    if (!file) {
+void loadGameState(Paddle& paddle, Ball& ball, vector<Block>& blocks) {
+    ifstream file("gamestate.txt", ios::in); 
+    if (!file) { 
         cerr << "Error: Could not open file for loading." << endl;
         return;
     }
     if (file.is_open()) {
         sf::Vector2f paddlePosition;
         sf::Vector2f ballPosition;
-        sf::Vector2f ballVelocity;
 
-        //pobranie pozycji z pliku
-        file >> paddlePosition.x >> paddlePosition.y; //Odczytuje dwie liczby (pozycjê x i y) z pliku i przypisuje je do zmiennych paddlePosition.x i paddlePosition.y
+        file >> paddlePosition.x >> paddlePosition.y; 
         file >> ballPosition.x >> ballPosition.y;
-        file >> ballVelocity.x >> ballVelocity.y;
 
         paddle.shape.setPosition(paddlePosition);
         ball.shape.setPosition(ballPosition);
-        ball.velocity = ballVelocity;
 
-        for (auto& block : blocks) {
+        for (int i = 0; i < blocks.size(); ++i) {
             bool destroyed;
             file >> destroyed;
-            block.destroyed = destroyed;
+            blocks[i].destroyed = destroyed;
         }
 
         file.close();
@@ -543,17 +518,17 @@ void loadGameState(Paddle& paddle, Ball& ball, std::vector<Block>& blocks) {
     }
 }
 
-
 // Tablica struktur do przechowywania wyników graczy
 vector<Player> players;
+
 // Funkcja do wczytywania wyników graczy z pliku
 void loadHighScores() {
     players.clear(); // Wyczyœæ istniej¹c¹ listê
     ifstream file("highscores.txt");
     if (file.is_open()) {
-        Player p;
-        while (file >> p.name >> p.score) {
-            players.push_back(p);
+        Player player;
+        while (file >> player.name >> player.score) {
+            players.push_back(player);
         }
         file.close();
     }
@@ -562,28 +537,28 @@ void loadHighScores() {
 // Funkcja do zapisywania wyników graczy do pliku
 void saveHighScores() {
     ofstream file("highscores.txt", ios::trunc); // Nadpisz plik //Tworzy plik highscores.txt w trybie zapisu, usuwaj¹c jego poprzedni¹ zawartoœæ.
-    if (file.is_open()) {
-        for (const auto& p : players) {
-            file << p.name << " " << p.score << std::endl;
+    if (file.is_open()) { //ios::trunc to flaga trybu pracy, która oznacza truncation (uciêcie). Gdy plik zostanie otwarty z t¹ flag¹, jego zawartoœæ zostanie ca³kowicie usuniêta(skrócona do d³ugoœci 0).
+        for (int i = 0; i < players.size(); ++i) {
+            file << players[i].name << " " << players[i].score << endl;
         }
         file.close();
     }
 }
 
 // Funkcja dodaj¹ca nowy wynik do rankingu
-void addHighScore(const std::string& playerName, int score, double elapsedTime) {
-    players.push_back({ playerName, score });
-    sort(players.begin(), players.end(), [](const Player& a, const Player& b) {
-        return a.score > b.score;
-        });
+void addHighScore(const string& playerName, int score, double elapsedTime) {
+    players.push_back({ playerName, score }); 
+
+    sort(players.begin(), players.end(), [](const Player& a, const Player& b) 
+        {return a.score > b.score;});
+
     if (players.size() > 10) { // Zachowaj tylko top 10 wyników
         players.pop_back();
     }
 
-    // Zapisz do pliku z czasem
-    ofstream file("highscores.txt", ios::app); // Dopisuj do pliku //Tworzy plik highscores.txt w trybie dopisywania. Nowe dane bêd¹ dodawane na koñcu pliku, bez usuwania istniej¹cej zawartoœci.
+    ofstream file("highscores.txt", ios::app); 
     if (file.is_open()) {
-        file << playerName << ", score: " << score << ", time " << elapsedTime << "s" << std::endl;
+        file << playerName << ", score: " << score << ", time " << elapsedTime << "s" << endl;
         file.close();
     }
 }
@@ -604,16 +579,16 @@ void showStatsScreen(sf::RenderWindow& window) {
     backTitle.setFillColor(sf::Color::White);
     backTitle.setPosition(100, WINDOW_HEIGHT-50);
 
-    vector<std::string> statsLines;
+    vector<string> statsLines;
     ifstream file("highscores.txt");
     string line;
     while (getline(file, line)) {
         statsLines.push_back(line);
-    } //Iteruje po liniach pliku i dodaje ka¿d¹ liniê do wektora statsLines
+    } 
     file.close();
 
-    std::vector<sf::Text> statsText;
-    for (size_t i = 0; i < statsLines.size(); ++i) {
+    vector<sf::Text> statsText;
+    for (int i = 0; i < statsLines.size(); ++i) {
         sf::Text text(statsLines[i], font, 20);
         text.setFillColor(sf::Color::White);
         text.setPosition(100, 100 + i * 30);
@@ -628,7 +603,7 @@ void showStatsScreen(sf::RenderWindow& window) {
                 return;
             }
             if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Enter) {
-                return; // Powrót do menu g³ównego
+                return; 
             }
         }
 
@@ -642,14 +617,14 @@ void showStatsScreen(sf::RenderWindow& window) {
     }
 }
 
-//t³o
+// Funckja t³a
 void renderBackground(sf::RenderWindow& window) {
     static sf::Texture texture; // Statyczna tekstura, ³adowana tylko raz
     static sf::Sprite background;
 
     if (!texture.getSize().x) { // £aduj teksturê tylko raz
         if (!texture.loadFromFile(BACKGROUND_PATH)) {
-            std::cerr << "Error loading background texture" << std::endl;
+            cerr << "Error loading background texture" << endl;
             return;
         }
         background.setTexture(texture);
@@ -658,18 +633,17 @@ void renderBackground(sf::RenderWindow& window) {
     window.draw(background);
 }
 
-// ----------------------------------
+
+//---------------------------------------------------
 // Funkcja runGame - G³ówna pêtla gry
-// ----------------------------------
-// Zarz¹dza ca³¹ logik¹ gry: sterowaniem, aktualizacj¹ stanu gry, renderowaniem obiektów
 void runGame(sf::RenderWindow& window) {
     Paddle paddle(WINDOW_WIDTH / 2 - PADDLE_WIDTH / 2, WINDOW_HEIGHT - 50);
     Ball ball(WINDOW_WIDTH / 2, WINDOW_HEIGHT - 100);
 
-    Irregular irregular(IRREGULAR_PATH, { 100, 100 }, { 1.0f, 1.5f });
+    Irregular irregular( 100, 100 );
 
-    time_t pauseStartTime = 0; // Czas rozpoczêcia pauzy (do obliczeñ ca³kowitego czasu gry)
-    double totalPauseTime = 0; // £¹czny czas spêdzony na pauzach
+    time_t pauseStartTime = 0; // Czas rozpoczêcia pauzy
+    double totalPauseTime = 0; // Czas spêdzony na pauzach
 
     sf::Font font;
     if (!font.loadFromFile(FONT_PATH)) {
@@ -677,9 +651,8 @@ void runGame(sf::RenderWindow& window) {
         return;
     }
 
-    int score = 0; // Licznik punktów
+    int score = 0; 
 
-    // Inicjalizacja tekstów dla wyniku i czasu
     sf::Text scoreText, timeText;
     scoreText.setFont(font);
     scoreText.setCharacterSize(20);
@@ -700,8 +673,8 @@ void runGame(sf::RenderWindow& window) {
         }
     }
 
-    time_t startTime = time(nullptr); // Czas rozpoczêcia gry
-    bool gameRunning = true; // Flaga kontroluj¹ca stan gry
+    time_t startTime = time(NULL); // Czas rozpoczêcia gry
+    bool gameRunning = true; 
     bool isPaused = false;
 
     while (window.isOpen() && gameRunning) {
@@ -712,13 +685,13 @@ void runGame(sf::RenderWindow& window) {
             }
 
             if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F1) {
-                pauseStartTime = time(nullptr); // Rozpoczêcie pauzy przy ekranie pomocy //Pobiera aktualny czas (w sekundach od epoki UNIX-a) i przypisuje go do pauseStartTime
+                pauseStartTime = time(NULL); // Rozpoczêcie pauzy- ekran pomocy
                 showHelpScreen(window);
-                totalPauseTime += difftime(time(nullptr), pauseStartTime); // Aktualizacja ³¹cznego czasu pauzy
+                totalPauseTime += difftime(time(NULL), pauseStartTime); // £¹czny czas pauzy
             }
 
             if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
-                pauseStartTime = time(nullptr); // Rozpoczêcie pauzy przy ekranie koñca gry
+                pauseStartTime = time(NULL); // Rozpoczêcie pauzy- ekran koñca gry
                 isPaused = true;
                 while (isPaused && window.isOpen()) {
                     sf::Event pauseEvent;
@@ -769,9 +742,9 @@ void runGame(sf::RenderWindow& window) {
 
         // Sprawdzenie, czy pi³ka dotknê³a dolnej granicy (koniec gry)
         if (ball.shape.getPosition().y > WINDOW_HEIGHT) {
-            time_t endTime = time(nullptr);
+            time_t endTime = time(NULL);
             int elapsedSeconds = static_cast<int>(difftime(endTime, startTime) - totalPauseTime);
-            std::string timeMessage = "Czas gry: " + to_string(elapsedSeconds) + " sekund";
+            string timeMessage = "Czas gry: " + to_string(elapsedSeconds) + " sekund";
 
             // Dodanie wyniku do rankingu
             addHighScore("Player", score, elapsedSeconds);
@@ -789,9 +762,9 @@ void runGame(sf::RenderWindow& window) {
             }
         }
         if (allDestroyed) {
-            time_t endTime = time(nullptr);
+            time_t endTime = time(NULL);
             int elapsedSeconds = static_cast<int>(difftime(endTime, startTime) - totalPauseTime);
-            std::string timeMessage = "Czas gry: " + to_string(elapsedSeconds) + " sekund";
+            string timeMessage = "Czas gry: " + to_string(elapsedSeconds) + " sekund";
 
             addHighScore("Player", score, elapsedSeconds);
             renderEndScreen(window, "WIN", timeMessage);
@@ -799,13 +772,11 @@ void runGame(sf::RenderWindow& window) {
             break;
         }
 
-        
 
+        // Renderowanie
 
-        // Renderowanie obiektów gry
         window.clear();
 
-        //t³o
         renderBackground(window);
 
         irregular.draw(window);
@@ -813,14 +784,15 @@ void runGame(sf::RenderWindow& window) {
         window.draw(paddle.shape);
         window.draw(ball.shape);
 
-        for (const auto& block : blocks) {
-            if (!block.destroyed)
-                window.draw(block.shape);
+        //renderowanie bloczkow
+        for (int i = 0; i < blocks.size(); ++i) {
+            if (!blocks[i].destroyed)
+                window.draw(blocks[i].shape);
         }
 
         //renderowanie przeszkód
-        for (const auto& obstacle : obstacles) {
-            obstacle.draw(window);
+        for (size_t i = 0; i < obstacles.size(); ++i) {
+            obstacles[i].draw(window);
         }
 
         // Wyœwietlanie wyniku i czasu na ekranie
@@ -843,8 +815,6 @@ void runGame(sf::RenderWindow& window) {
 }
 
 // Funkcja chooseLevel - Wybór poziomu trudnoœci
-// Pozwala graczowi wybraæ poziom trudnoœci (EASY, MEDIUM, HARD)
-// i ustawia odpowiedni¹ prêdkoœæ pi³ki.
 void chooseLevel(sf::RenderWindow& window) {
     sf::Font font;
     if (!font.loadFromFile(FONT_PATH)) {
@@ -856,16 +826,19 @@ void chooseLevel(sf::RenderWindow& window) {
     levelTitle.setFillColor(sf::Color::White);
     levelTitle.setPosition(WINDOW_WIDTH / 2 - 150, 50);
 
-    const std::vector<std::string> items = { "EASY", "MEDIUM", "HARD" };
-    const std::vector<float> speeds = { -2.0f, -3.0f, -4.0f };
-    const std::vector<float> paddlewidth = { 100.0f, 85.0f, 70.0f };
-    std::vector<sf::Text> levels(items.size());
+    const vector<string> items = { "EASY", "MEDIUM", "HARD" };
+    const vector<float> speeds = { -2.0f, -3.0f, -4.0f };
+    const vector<float> paddlewidth = { 100.0f, 85.0f, 70.0f };
+    vector<sf::Text> levels(items.size());
     int selectedLevel = 0;
 
-    for (size_t i = 0; i < items.size(); i++) {
+    for (int i = 0; i < items.size(); i++) {
+        sf::Color color;
+        if (i == selectedLevel) {color = sf::Color::Red;}
+        else {color = sf::Color::White;}
         levels[i].setFont(font);
         levels[i].setString(items[i]);
-        levels[i].setFillColor(i == selectedLevel ? sf::Color::Red : sf::Color::White);
+        levels[i].setFillColor(color);
         levels[i].setPosition(WINDOW_WIDTH / 2 - 100, 150 + i * 50);
     }
 
@@ -883,7 +856,7 @@ void chooseLevel(sf::RenderWindow& window) {
                     selectedLevel = (selectedLevel + 1) % items.size();
                 }
                 else if (event.key.code == sf::Keyboard::Enter) {
-                    // Ustawienia prêdkoœci pi³ki i szerokoœci paletki
+                   
                     ball_speed = speeds[selectedLevel];
                     PADDLE_WIDTH = paddlewidth[selectedLevel];
 
@@ -896,13 +869,16 @@ void chooseLevel(sf::RenderWindow& window) {
                         obstacles.emplace_back(2 * WINDOW_WIDTH / 3 - WALL_WIDTH / 2, WINDOW_HEIGHT / 2 - WALL_HEIGHT / 2);
                     }
 
-                    return; // Wyjœcie z funkcji po wybraniu poziomu
+                    return;
                 }
             }
         }
 
-        for (size_t i = 0; i < items.size(); i++) {
-            levels[i].setFillColor(i == selectedLevel ? sf::Color::Red : sf::Color::White);
+        for (int i = 0; i < items.size(); i++) {
+            sf::Color color;
+            if (i == selectedLevel) {color = sf::Color::Red;}
+            else {color = sf::Color::White;}
+            levels[i].setFillColor(color);
         }
 
         window.clear(sf::Color::Black);
@@ -920,7 +896,7 @@ void chooseLevel(sf::RenderWindow& window) {
 int main() {
     sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Arkanoid");
 
-    window.setFramerateLimit(60); // Ograniczenie liczby klatek na sekundê
+    window.setFramerateLimit(60);
 
     loadHighScores();
 
@@ -931,17 +907,14 @@ int main() {
 
     Paddle paddle(WINDOW_WIDTH / 2 - PADDLE_WIDTH / 2, WINDOW_HEIGHT - 50);
     Ball ball(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2);
-    std::vector<Block> blocks;
+    vector<Block> blocks;
     int score = 0;
 
-    // Wype³nij wektor bloków
     for (int i = 0; i < 10; ++i) {
         for (int j = 0; j < 5; ++j) {
             blocks.emplace_back(i * (BLOCK_WIDTH + 10) + 50, j * (BLOCK_HEIGHT + 10) + 50);
         }
     }
-
-
 
     while (window.isOpen()) {
         sf::Event event;
